@@ -39,10 +39,6 @@ std::string GetEjectString() {
 	{
 		return std::string{} + "弹出" + GetCPUName();
 	}
-	case 0x0409:	   // 英语
-	{
-		return std::string{} + "Eject " + GetCPUName();
-	}
 	case 0x0411:	   // 日语
 	{
 		return std::string{} + GetCPUName() + "を取り出す";
@@ -63,8 +59,7 @@ std::string GetEjectString() {
 	{
 		return std::string{} + GetCPUName() + " çıkar";
 	}
-	default:
-	case 0x0809:	   // 英语（英国）
+	default:	   // 英语
 	{
 		return std::string{} + "Eject " + GetCPUName();
 	}
