@@ -14,55 +14,40 @@ const char* GetCPUName() {
 	memset(CPUBrandString, 0, sizeof(CPUBrandString));
 	for(unsigned int i = 0x80000000; i <= nExIds; ++i) {
 		__cpuid(CPUInfo, i);
-		if(i == 0x80000002) {
+		if(i == 0x80000002)
 			memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
-		}
-		else if(i == 0x80000003) {
+		else if(i == 0x80000003)
 			memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
-		}
-		else if(i == 0x80000004) {
+		else if(i == 0x80000004)
 			memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
-		}
 	}
 	return CPUBrandString;
 }
 // 获取“弹出”的对应i18n字符串，如“弹出”、“Eject”、“Auswerfen”等
-std::string GetEjectString() {
+std::wstring GetEjectString() {
 	//当地id
 	LCID lcid = GetUserDefaultLCID();
+	std::wstring CPUNameW;
+	CPUNameW.resize(strlen(GetCPUName()));
+	for(unsigned i = 0; i < CPUNameW.length(); i++)
+		CPUNameW[i] = GetCPUName()[i];
 	switch(lcid) {
 	case 0x0404:	   // 繁体中文
-	{
-		return std::string{} + "彈出" + GetCPUName();
-	}
+		return L"彈出" + CPUNameW;
 	case 0x0804:	   // 简体中文
-	{
-		return std::string{} + "弹出" + GetCPUName();
-	}
+		return L"弹出" + CPUNameW;
 	case 0x0411:	   // 日语
-	{
-		return std::string{} + GetCPUName() + "を取り出す";
-	}
+		return CPUNameW + L"を取り出す";
 	case 0x0412:	   // 韩语
-	{
-		return std::string{} + GetCPUName() + "를 추출";
-	}
+		return CPUNameW + L"를 추출";
 	case 0x0419:	   // 俄语
-	{
-		return std::string{} + "Извлечь " + GetCPUName();
-	}
+		return L"Извлечь " + CPUNameW;
 	case 0x041D:	   // 瑞典语
-	{
-		return std::string{} + "Ta ut " + GetCPUName();
-	}
+		return L"Ta ut " + CPUNameW;
 	case 0x041F:	   // 土耳其语
-	{
-		return std::string{} + GetCPUName() + " çıkar";
-	}
+		return CPUNameW + L" çıkar";
 	default:	   // 英语
-	{
-		return std::string{} + "Eject " + GetCPUName();
-	}
+		return L"Eject " + CPUNameW;
 	}
 }
 
@@ -125,10 +110,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	// 互斥体
-	HANDLE hMutex = CreateMutexW(NULL, TRUE, L"Global\\MyMutex");
-	if(GetLastError() == ERROR_ALREADY_EXISTS) {
+	HANDLE hMutex = CreateMutexW(NULL, TRUE, L"Global\\EjectMyCPUMutex");
+	if(GetLastError() == ERROR_ALREADY_EXISTS)
 		return 0;
-	}
 	// 创建窗口类
 	WNDCLASSW wc	 = {};
 	wc.lpfnWndProc	 = WindowProc;
@@ -148,7 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	nid.uCallbackMessage = WM_USER + 1;
 	// 加载explorer.exe的默认图标
 	nid.hIcon = LoadIconW(LoadLibraryW(L"explorer.exe"), MAKEINTRESOURCEW(263));
-	memcpy(nid.szTip, L"My Application", sizeof(L"My Application"));
+	memcpy(nid.szTip, L"Eject My CPU", sizeof(L"Eject My CPU"));
 	Shell_NotifyIcon(NIM_ADD, &nid);
 
 	// 消息循环
@@ -172,7 +156,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		case WM_LBUTTONDBLCLK: {
 			// 弹出菜单
 			HMENU hMenu = CreatePopupMenu();
-			AppendMenuA(hMenu, MF_STRING, 1, GetEjectString().c_str());
+			AppendMenuW(hMenu, MF_STRING, 1, GetEjectString().c_str());
 			POINT pt;
 			GetCursorPos(&pt);
 			SetForegroundWindow(hwnd);
@@ -183,22 +167,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		}
 		break;
 	}
-	case WM_DESTROY: {
+	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	}
-	case WM_COMMAND: {
+	case WM_COMMAND:
 		switch(LOWORD(wParam)) {
-		case 1: {
+		case 1:
 			bsod(0xDeadBeef);
 			break;
 		}
-		}
 		break;
-	}
-	default: {
+	default:
 		return DefWindowProc(hwnd, uMsg, wParam, lParam);
-	}
 	}
 	return 0;
 }
